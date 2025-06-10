@@ -25,6 +25,20 @@ class Settings(BaseModel):
         default=1000
     )
 
+    SMA_PERIOD: int = Field(
+        default=10
+    )
+    SMA_INTERVAL: str = Field(
+        default='1'
+    )
+
+    AD_LIMIT: str = Field(
+        default=50
+    )
+    AD_INTERVAL: str = Field(
+        default='15'
+    )
+
     LOG_DIR: Path = Field(default=Path('logs'))
     LOG_FILE: Path = Field(default=Path('logs/service.log'))
 

@@ -3,6 +3,8 @@ import requests
 from core.logger import root
 from core.config import settings
 
+from services.data_provider import DataProvider
+
 from collections import defaultdict
 
 
@@ -152,3 +154,76 @@ class BybitAPI:
             )[:limit]
 
         return []
+
+
+    def sma_trend(
+        self, symbol: str, interval: str = settings.SMA_INTERVAL,
+        period: int = settings.SMA_PERIOD, category: str = 'linear') -> dict:
+
+        params = {
+            'category': category,
+            'symbol': symbol,
+            'interval': interval,
+            'limit': period
+        }
+
+        data = self.__request(
+            url=self.candles_url,
+            params=params
+        )
+
+        if data:
+            prices = [float(candle[4]) for candle in data]
+
+        else:
+            root.error("ValueError Empty field in 'result.list'")
+
+        sma = sum(prices) / len(prices) if prices else 0
+        trend = 'UP' if prices[-1] > sma else 'DOWN'
+
+        return {
+            'price': prices[-1],
+            'sma': sma,
+            'trend': trend
+        }
+
+
+    def ad_trend(
+        self, symbol: str, interval: str = settings.AD_INTERVAL, 
+        limit: int = settings.AD_LIMIT, category: str = 'linear') -> dict:
+
+        ad_line = 0
+        ad_values =[]
+
+        params = {
+            'category': category,
+            'symbol': symbol,
+            'interval': interval,
+            'limit': limit
+        }
+
+        data = self.__request(
+            url=settings.BYBIT_CANDLESTCIKS_URL,
+            params=params
+        )
+
+        data = DataProvider().to_dataframe(raw=data)
+
+        for open, high, low, close, volume in data.values.tolist():
+            if high != low:
+                flow = ((close - low) - (high - close)) / (high - low)
+
+            else:
+                flow = 0
+
+            ad_line += flow * volume
+
+            ad_values.append(ad_line)
+
+        trend = 'UP' if ad_values[-1] > ad_values[-2] else 'DOWN'
+
+        return {
+            'price': data.values.tolist()[-1][3],
+            'ad': ad_values[-1],
+            'trend': trend
+        }
