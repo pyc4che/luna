@@ -108,3 +108,19 @@ async def get_fibonacci_levels(symbol: str = Query(...), interval: str = Query('
             category=category
         )
     }
+
+
+@router.get('/support_resistance')
+async def get_support_resistance_levels(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), category: str = 'linear'):
+    root.info(
+        f'Request support_resistance (symbol={symbol}, interval={interval}, limit={limit}, category={category})'
+    )
+
+    return {
+        'result': api.support_resistance_levels(
+            symbol=symbol,
+            interval=interval,
+            limit=limit,
+            category=category
+        )
+    }

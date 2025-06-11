@@ -202,7 +202,7 @@ class BybitAPI:
             'limit': limit
         }
 
-        data = self.__request(
+        data = self.__request( 
             url=settings.BYBIT_CANDLESTCIKS_URL,
             params=params
         )
@@ -253,4 +253,31 @@ class BybitAPI:
             'high': max(highs),
             'low': max(lows),
             'fib': levels
+        }
+
+
+    def support_resistance_levels(
+        self, symbol: str, interval: str = settings.INTERVAL,
+        limit: int = settings.LIMIT, category: str = 'linear') -> dict:
+
+        params = {
+            'category': category,
+            'symbol': symbol,
+            'interval': interval,
+            'limit': limit
+        }
+
+        data = self.__request( 
+            url=settings.BYBIT_CANDLESTCIKS_URL,
+            params=params
+        )
+
+        data = DataProvider().to_dataframe(raw=data)
+
+        support = data['low'].min()
+        resistance = data['high'].max()
+
+        return {
+            'support': support,
+            'resistance': resistance
         }
