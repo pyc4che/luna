@@ -63,7 +63,7 @@ async def get_clusters(symbol: str = Query(...), bin_size: int = Query(50), trad
 
 
 @router.get('/sma')
-def get_sma(symbol: str = Query(...), interval: str = Query('1'), period: int = Query(10), category: str = Query('linear')):
+async def get_sma(symbol: str = Query(...), interval: str = Query('1'), period: int = Query(10), category: str = Query('linear')):
     root.info(
         f'Request: sma (symbol={symbol}, interval={interval}, period={period}, category={category})'
     )
@@ -79,13 +79,29 @@ def get_sma(symbol: str = Query(...), interval: str = Query('1'), period: int = 
 
 
 @router.get('/adline')
-def get_ad_line(symbol: str = Query(...), interval: str = Query('15'), limit: int = Query(50), category: str = 'linear'):
+async def get_ad_line(symbol: str = Query(...), interval: str = Query('15'), limit: int = Query(50), category: str = 'linear'):
     root.info(
         f'Request: adline (symbol={symbol}, interval={interval}, limit={limit}, category={category})'
     )
 
     return {
         'result': api.ad_trend(
+            symbol=symbol,
+            interval=interval,
+            limit=limit,
+            category=category
+        )
+    }
+
+
+@router.get('/fibonacci')
+async def get_fibonacci_levels(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), category: str = 'linear'):
+    root.info(
+        f'Request: fibonacci (symbol={symbol}, interval={interval}, limit={limit}, category={category})'
+    )
+
+    return {
+        'result': api.fibonacci_levels(
             symbol=symbol,
             interval=interval,
             limit=limit,

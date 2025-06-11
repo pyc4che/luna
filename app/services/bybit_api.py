@@ -227,3 +227,30 @@ class BybitAPI:
             'ad': ad_values[-1],
             'trend': trend
         }
+
+
+    def fibonacci_levels(
+        self, symbol: str, interval: str = settings.INTERVAL, 
+        limit: int = settings.LIMIT, category: str = 'linear') -> dict:
+
+        candles = self.candlestick_data(
+            symbol=symbol,
+            interval=interval,
+            limit=limit
+        )
+
+        if not candles:
+            return {}
+
+        lows = [float(candle[3]) for candle in candles]
+        highs = [float(candle[2]) for candle in candles]
+
+        ratios = [1, 0.786, 0.618, 0.5, 0.328, 0.236, 0]
+
+        levels = {str(r): max(highs) - (max(highs) - max(lows)) * r for r in ratios}
+
+        return {
+            'high': max(highs),
+            'low': max(lows),
+            'fib': levels
+        }

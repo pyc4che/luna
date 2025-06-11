@@ -39,6 +39,13 @@ class Settings(BaseModel):
         default='15'
     )
 
+    INTERVAL: str = Field(
+        default='60'
+    )
+    LIMIT: int = Field(
+        default=48
+    )
+
     LOG_DIR: Path = Field(default=Path('logs'))
     LOG_FILE: Path = Field(default=Path('logs/service.log'))
 
