@@ -1,5 +1,10 @@
 import requests
 
+import ta
+import ta.momentum
+import ta.trend
+import ta.volatility
+
 from core.logger import root
 from core.config import settings
 
@@ -231,7 +236,7 @@ class BybitAPI:
 
     def fibonacci_levels(
         self, symbol: str, interval: str = settings.INTERVAL, 
-        limit: int = settings.LIMIT, category: str = 'linear') -> dict:
+        limit: int = settings.LIMIT) -> dict:
 
         candles = self.candlestick_data(
             symbol=symbol,
@@ -280,4 +285,78 @@ class BybitAPI:
         return {
             'support': support,
             'resistance': resistance
+        }
+
+
+    def rsi(
+        self, symbol: str, interval: str = settings.INTERVAL,
+        limit: int = settings.LIMIT, period: int = 14) -> float:
+
+        data = self.candlestick_data(
+            symbol=symbol,
+            interval=interval,
+            limit=limit
+        )
+
+        data = DataProvider().to_dataframe(raw=data)
+
+        if data.empty:
+            return 0.0
+
+        data['rsi'] = ta.momentum.RSIIndicator(
+            close=data['close'],
+            window=period
+        ).rsi()
+
+        return data['rsi'].iloc[-1]
+
+
+    def macd(
+        self, symbol: str, interval: str = settings.INTERVAL,
+        limit: int = settings.LIMIT) -> dict:
+
+        data = self.candlestick_data(
+            symbol=symbol,
+            interval=interval,
+            limit=limit
+        )
+
+        data = DataProvider().to_dataframe(raw=data)
+
+        if data.empty:
+            return {}
+
+        macd = ta.trend.MACD(close=data['close'])
+
+        return {
+            'macd': macd.macd().iloc[-1],
+            'signal': macd.macd_signal().iloc[-1],
+            'histogram': macd.macd_diff().iloc[-1]
+        }
+
+
+    def bollinger(
+        self, symbol: str, interval: str = settings.INTERVAL,
+        limit: int = settings.LIMIT, window: int = 20) -> dict:
+
+        data = self.candlestick_data(
+            symbol=symbol,
+            interval=interval,
+            limit=limit
+        )
+
+        data = DataProvider().to_dataframe(raw=data)
+
+        if data.empty:
+            return {}
+
+        bb = ta.volatility.BollingerBands(
+            close=data['close'],
+            window=window
+        )
+
+        return {
+            'upper': bb.bollinger_hband().iloc[-1],
+            'lower': bb.bollinger_lband().iloc[-1],
+            'middle': bb.bollinger_mavg().iloc[-1]
         }

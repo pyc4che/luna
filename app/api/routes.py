@@ -79,17 +79,16 @@ async def get_sma(symbol: str = Query(...), interval: str = Query('1'), period: 
 
 
 @router.get('/adline')
-async def get_ad_line(symbol: str = Query(...), interval: str = Query('15'), limit: int = Query(50), category: str = 'linear'):
+async def get_ad_line(symbol: str = Query(...), interval: str = Query('15'), limit: int = Query(50)):
     root.info(
-        f'Request: adline (symbol={symbol}, interval={interval}, limit={limit}, category={category})'
+        f'Request: adline (symbol={symbol}, interval={interval}, limit={limit})'
     )
 
     return {
         'result': api.ad_trend(
             symbol=symbol,
             interval=interval,
-            limit=limit,
-            category=category
+            limit=limit
         )
     }
 
@@ -122,5 +121,52 @@ async def get_support_resistance_levels(symbol: str = Query(...), interval: str 
             interval=interval,
             limit=limit,
             category=category
+        )
+    }
+
+
+@router.get('/rsi')
+async def get_rsi(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), period: int = Query(14)):
+    root.info(
+        f'Request rsi (symbol={symbol}, interval={interval}, limit={limit}'
+    )
+
+    return {
+        'result': api.rsi(
+            symbol=symbol,
+            interval=interval,
+            limit=limit,
+            period=period
+        )
+    }
+
+
+@router.get('/macd')
+async def get_macd(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48)):
+    root.info(
+        f'Request macd (symbol={symbol}, interval={interval}, limit={limit})'
+    )
+
+    return {
+        'result': api.macd(
+            symbol=symbol,
+            interval=interval,
+            limit=limit
+        )
+    }
+
+
+@router.get('/bollinger')
+async def get_bollinger(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), window: int = Query(20)):
+    root.info(
+        f'Request bollinger (symbol={symbol}, interval={interval}, limit={limit}, window={window})'
+    )
+
+    return {
+        'result': api.bollinger(
+            symbol=symbol,
+            interval=interval,
+            limit=limit,
+            window=window
         )
     }
