@@ -1,6 +1,7 @@
 from core.logger import root
 
-from pandas import DataFrame, Timedelta, to_datetime
+from numpy import inf, nan
+from pandas import DataFrame, Timedelta, Series, to_datetime
 
 
 class DataProvider:
@@ -19,13 +20,12 @@ class DataProvider:
                 df['open_time'].astype('int64'), unit='ms'
             )
 
-            df.set_index('open_time', inplace=True)
-            df = df.sort_index()
+            df = df.sort_values(by='open_time')
 
-            df = df.astype(float)[['open', 'high', 'low', 'close', 'volume']]
+            df = df.astype(float, errors='ignore')
 
             df = df.loc[
-                df.index[-1] - Timedelta(hours=hours):df.index[-1]
+                df['open_time'] >= df['open_time'].max() - Timedelta(hours=hours)
             ]
 
             return df
@@ -36,3 +36,7 @@ class DataProvider:
             )
 
             return DataFrame()
+
+
+    def safe_json(self, series: Series, subset: list) -> Series:
+        return series.replace([inf, -inf], nan).dropna(subset=subset)

@@ -1,9 +1,6 @@
 import requests
 
 import ta
-import ta.momentum
-import ta.trend
-import ta.volatility
 
 from core.logger import root
 from core.config import settings
@@ -95,21 +92,17 @@ class BybitAPI:
 
 
     def candlestick_data(self, symbol: str, interval: str = '60', limit: int = 48) -> list:
-        if limit in range(48, 169):
-            params = {
-                'category': 'linear',
-                'symbol': symbol,
-                'interval': interval,
-                'limit': limit
-            }
+        params = {
+            'category': 'linear',
+            'symbol': symbol,
+            'interval': interval,
+            'limit': limit
+        }
 
-            return self.__request(
-                url=self.candles_url,
-                params=params
-            )
-
-        else: 
-            return []
+        return self.__request(
+            url=self.candles_url,
+            params=params
+        )
 
 
     def volume_clusters(
@@ -195,7 +188,7 @@ class BybitAPI:
 
     def ad_trend(
         self, symbol: str, interval: str = settings.AD_INTERVAL, 
-        limit: int = settings.AD_LIMIT, category: str = 'linear') -> dict:
+        limit: int = settings.AD_LIMIT, category: str = 'linear', hours: int = 48) -> dict:
 
         ad_line = 0
         ad_values =[]
@@ -212,7 +205,10 @@ class BybitAPI:
             params=params
         )
 
-        data = DataProvider().to_dataframe(raw=data)
+        data = DataProvider().to_dataframe(
+            raw=data,
+            hours=hours
+        )
 
         for open, high, low, close, volume in data.values.tolist():
             if high != low:
@@ -228,8 +224,8 @@ class BybitAPI:
         trend = 'UP' if ad_values[-1] > ad_values[-2] else 'DOWN'
 
         return {
-            'price': data.values.tolist()[-1][3],
-            'ad': ad_values[-1],
+            'price': data.values.tolist(),
+            'ad': ad_values,
             'trend': trend
         }
 
@@ -263,7 +259,7 @@ class BybitAPI:
 
     def support_resistance_levels(
         self, symbol: str, interval: str = settings.INTERVAL,
-        limit: int = settings.LIMIT, category: str = 'linear') -> dict:
+        limit: int = settings.LIMIT, category: str = 'linear', hours: int = 48) -> dict:
 
         params = {
             'category': category,
@@ -277,7 +273,10 @@ class BybitAPI:
             params=params
         )
 
-        data = DataProvider().to_dataframe(raw=data)
+        data = DataProvider().to_dataframe(
+            raw=data,
+            hours=hours    
+        )
 
         support = data['low'].min()
         resistance = data['high'].max()
@@ -290,7 +289,7 @@ class BybitAPI:
 
     def rsi(
         self, symbol: str, interval: str = settings.INTERVAL,
-        limit: int = settings.LIMIT, period: int = 14) -> float:
+        limit: int = settings.LIMIT, period: int = 14, hours: int = 48) -> dict:
 
         data = self.candlestick_data(
             symbol=symbol,
@@ -298,22 +297,30 @@ class BybitAPI:
             limit=limit
         )
 
-        data = DataProvider().to_dataframe(raw=data)
+        data = DataProvider().to_dataframe(
+            raw=data,
+            hours=hours
+        )
 
         if data.empty:
-            return 0.0
+            return {}
 
         data['rsi'] = ta.momentum.RSIIndicator(
             close=data['close'],
             window=period
         ).rsi()
 
-        return data['rsi'].iloc[-1]
+        data = DataProvider().safe_json(
+            series=data,
+            subset=['rsi']
+        )
+
+        return data[['open_time', 'rsi']].to_dict(orient='records')
 
 
     def macd(
         self, symbol: str, interval: str = settings.INTERVAL,
-        limit: int = settings.LIMIT) -> dict:
+        limit: int = settings.LIMIT, hours: int = 48) -> dict:
 
         data = self.candlestick_data(
             symbol=symbol,
@@ -321,23 +328,31 @@ class BybitAPI:
             limit=limit
         )
 
-        data = DataProvider().to_dataframe(raw=data)
+        data = DataProvider().to_dataframe(
+            raw=data,
+            hours=hours
+        )
 
         if data.empty:
             return {}
 
-        macd = ta.trend.MACD(close=data['close'])
+        macd = ta.trend.MACD(close=data['close'])   
 
-        return {
-            'macd': macd.macd().iloc[-1],
-            'signal': macd.macd_signal().iloc[-1],
-            'histogram': macd.macd_diff().iloc[-1]
-        }
+        data['macd'] = macd.macd()
+        data['signal'] = macd.macd_signal()
+        data['histogram'] = macd.macd_diff()
+
+        data = DataProvider().safe_json(
+            series=data,
+            subset=['macd', 'signal', 'histogram']
+        )
+
+        return data[['open_time', 'macd', 'signal', 'histogram']].to_dict(orient='records')
 
 
     def bollinger(
         self, symbol: str, interval: str = settings.INTERVAL,
-        limit: int = settings.LIMIT, window: int = 20) -> dict:
+        limit: int = settings.LIMIT, window: int = 20, hours: int = 48) -> dict:
 
         data = self.candlestick_data(
             symbol=symbol,
@@ -345,7 +360,10 @@ class BybitAPI:
             limit=limit
         )
 
-        data = DataProvider().to_dataframe(raw=data)
+        data = DataProvider().to_dataframe(
+            raw=data,
+            hours=hours
+        )
 
         if data.empty:
             return {}
@@ -355,8 +373,15 @@ class BybitAPI:
             window=window
         )
 
-        return {
-            'upper': bb.bollinger_hband().iloc[-1],
-            'lower': bb.bollinger_lband().iloc[-1],
-            'middle': bb.bollinger_mavg().iloc[-1]
-        }
+        data['upper'] = bb.bollinger_hband()
+        data['lower'] = bb.bollinger_lband()
+        data['middle'] = bb.bollinger_mavg()
+
+        data = DataProvider().safe_json(
+            series=data,
+            subset=['upper', 'lower', 'middle']
+        )
+
+        
+
+        return data[['open_time', 'upper', 'lower', 'middle']].to_dict(orient='records')

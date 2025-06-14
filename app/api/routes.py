@@ -34,12 +34,14 @@ async def get_candles(symbol: str = Query(...), interval: str = Query('60'), hou
     raw = api.candlestick_data(
         symbol=symbol,
         interval=interval,
-        limit = int(hours * 60 / int(interval))
+        limit=int(hours * 60 / int(interval))
     )
 
     df = dp.to_dataframe(
         raw, hours=hours
     )
+
+    del df['turnover']
 
     return {
         'result': df.reset_index().to_dict(orient='records')
@@ -79,16 +81,17 @@ async def get_sma(symbol: str = Query(...), interval: str = Query('1'), period: 
 
 
 @router.get('/adline')
-async def get_ad_line(symbol: str = Query(...), interval: str = Query('15'), limit: int = Query(50)):
+async def get_ad_line(symbol: str = Query(...), interval: str = Query('15'), limit: int = Query(50), hours: int = Query(48)):
     root.info(
-        f'Request: adline (symbol={symbol}, interval={interval}, limit={limit})'
+        f'Request: adline (symbol={symbol}, interval={interval}, limit={limit}, hours={hours})'
     )
 
     return {
         'result': api.ad_trend(
             symbol=symbol,
             interval=interval,
-            limit=limit
+            limit=limit,
+            hours=hours
         )
     }
 
@@ -110,9 +113,9 @@ async def get_fibonacci_levels(symbol: str = Query(...), interval: str = Query('
 
 
 @router.get('/support_resistance')
-async def get_support_resistance_levels(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), category: str = 'linear'):
+async def get_support_resistance_levels(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), category: str = 'linear', hours: int = Query(48)):
     root.info(
-        f'Request support_resistance (symbol={symbol}, interval={interval}, limit={limit}, category={category})'
+        f'Request: support_resistance (symbol={symbol}, interval={interval}, limit={limit}, category={category}, hours={hours})'
     )
 
     return {
@@ -120,15 +123,16 @@ async def get_support_resistance_levels(symbol: str = Query(...), interval: str 
             symbol=symbol,
             interval=interval,
             limit=limit,
-            category=category
+            category=category,
+            hours=hours
         )
     }
 
 
 @router.get('/rsi')
-async def get_rsi(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), period: int = Query(14)):
+async def get_rsi(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), period: int = Query(14), hours: int = Query(48)):
     root.info(
-        f'Request rsi (symbol={symbol}, interval={interval}, limit={limit}'
+        f'Request: rsi (symbol={symbol}, interval={interval}, limit={limit}, period={period}, hours={hours})'
     )
 
     return {
@@ -136,30 +140,32 @@ async def get_rsi(symbol: str = Query(...), interval: str = Query('60'), limit: 
             symbol=symbol,
             interval=interval,
             limit=limit,
-            period=period
+            period=period,
+            hours=hours
         )
     }
 
 
 @router.get('/macd')
-async def get_macd(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48)):
+async def get_macd(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), hours: int = Query(48)):
     root.info(
-        f'Request macd (symbol={symbol}, interval={interval}, limit={limit})'
+        f'Request macd (symbol={symbol}, interval={interval}, limit={limit}, hours={hours})'
     )
 
     return {
         'result': api.macd(
             symbol=symbol,
             interval=interval,
-            limit=limit
+            limit=limit,
+            hours=hours
         )
     }
 
 
 @router.get('/bollinger')
-async def get_bollinger(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), window: int = Query(20)):
+async def get_bollinger(symbol: str = Query(...), interval: str = Query('60'), limit: int = Query(48), window: int = Query(20), hours: int = Query(48)):
     root.info(
-        f'Request bollinger (symbol={symbol}, interval={interval}, limit={limit}, window={window})'
+        f'Request bollinger (symbol={symbol}, interval={interval}, limit={limit}, window={window}, hours={hours})'
     )
 
     return {
@@ -167,6 +173,7 @@ async def get_bollinger(symbol: str = Query(...), interval: str = Query('60'), l
             symbol=symbol,
             interval=interval,
             limit=limit,
-            window=window
+            window=window,
+            hours=hours
         )
     }
