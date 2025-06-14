@@ -49,6 +49,23 @@ class Settings(BaseModel):
     LOG_DIR: Path = Field(default=Path('logs'))
     LOG_FILE: Path = Field(default=Path('logs/service.log'))
 
+    CACHE_RSI_TTL: int = Field(
+        default=90
+    )
+    CACHE_MACD_TTL: int = Field(
+        default=120
+    )
+    CACHE_DEFAULT_TTL: int = Field(
+        default=60
+    )
+    CACHE_BOLLINGER_TTL: int = Field(
+        default=180
+    )
+
+    def get_ttl(self, key: str, default: int = None) -> int:
+        return getattr(self, key, default or self.CACHE_DEFAULT_TTL)
+
+
     class Config:
         case_sensitive = False
 

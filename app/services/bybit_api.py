@@ -7,6 +7,9 @@ from core.config import settings
 
 from services.data_provider import DataProvider
 
+from services.cache import cache
+from utils.cache_ttl import ttl_for
+
 from collections import defaultdict
 
 
@@ -47,7 +50,7 @@ class BybitAPI:
             )
             return []
 
-
+    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL)
     def volatility_data(self, category: str = 'linear', limit: int = 10) -> list:
         params = {'category': category}
 
@@ -91,6 +94,7 @@ class BybitAPI:
         )[:limit]
 
 
+    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL)
     def candlestick_data(self, symbol: str, interval: str = '60', limit: int = 48) -> list:
         params = {
             'category': 'linear',
@@ -287,6 +291,7 @@ class BybitAPI:
         }
 
 
+    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL or ttl_for('rsi'))
     def rsi(
         self, symbol: str, interval: str = settings.INTERVAL,
         limit: int = settings.LIMIT, period: int = 14, hours: int = 48) -> dict:
@@ -318,6 +323,7 @@ class BybitAPI:
         return data[['open_time', 'rsi']].to_dict(orient='records')
 
 
+    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL or ttl_for('macd'))
     def macd(
         self, symbol: str, interval: str = settings.INTERVAL,
         limit: int = settings.LIMIT, hours: int = 48) -> dict:
@@ -350,6 +356,7 @@ class BybitAPI:
         return data[['open_time', 'macd', 'signal', 'histogram']].to_dict(orient='records')
 
 
+    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL or ttl_for('bollinger'))
     def bollinger(
         self, symbol: str, interval: str = settings.INTERVAL,
         limit: int = settings.LIMIT, window: int = 20, hours: int = 48) -> dict:

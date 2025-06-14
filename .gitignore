@@ -4,3 +4,4 @@ tests
 .venv
 data.json
 __pycache__
+.cache
