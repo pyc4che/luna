@@ -13,8 +13,7 @@ This project lets you run a local server to query Bybit market data via easy RES
 3. Install Python Requirements - `pip install -r requirements.txt`;
 4. Create `.env` File (or copy configuration from `.env.example`);
 5. Create `logs` directory & create `logs/service.log` file - `mkdir logs && touch logs/service.log` (change logs directory in `.env` configuration);
-6. Create `.cache` directory - `mkdir .cache`;
-7. Run the App - `PYTHONPATH=app uvicorn main:app --host 127.0.0.1 --port 9000 --reload`
+7. Run the App - `PYTHONPATH=app uvicorn main:app --host 127.0.0.1 --port 9000 --reload` (you may use `0.0.0.0` or `127.0.0.1`, depends on whether you want to make API visible on LAN or accessible only from machine)
 
 ---
 
