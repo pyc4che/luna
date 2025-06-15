@@ -1,14 +1,13 @@
-import requests
+import httpx
 
 import ta
 
 from core.logger import root
 from core.config import settings
+from core.caching import logged_cache, ttl_for
 
 from services.data_provider import DataProvider
 
-from services.cache import cache
-from utils.cache_ttl import ttl_for
 
 from collections import defaultdict
 
@@ -20,41 +19,41 @@ class BybitAPI:
         self.candles_url = settings.BYBIT_CANDLESTCIKS_URL
 
 
-    def __request(self, url: str, params: dict, timeout: int = 10) -> list:
-        try:
-            response = requests.get(
-                url, 
-                params=params,
-                timeout=timeout
-            )
-            response.raise_for_status()
-
-            data = response.json()
-
-            if data.get('retCode') == 0:
-                return data.get(
-                    'result', {}
-                ).get(
-                    'list', []
+    async def __request(self, url: str, params: dict, timeout: int = 10) -> list:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            try:
+                response = await client.get(
+                    url, 
+                    params=params
                 )
+                response.raise_for_status()
 
-            else:
+                data = response.json()
+
+                if data.get('retCode') == 0:
+                    return data.get(
+                        'result', {}
+                    ).get(
+                        'list', []
+                    )
+
+                else:
+                    root.error(
+                        f'API Error: {data.get("retMsg")}'
+                    )
+                    return []
+
+            except Exception as _ex:
                 root.error(
-                    f'API Error: {data.get("retMsg")}'
+                    f'BybitAPI request error: {_ex}'
                 )
                 return []
 
-        except Exception as _ex:
-            root.error(
-                f'BybitAPI request error: {_ex}'
-            )
-            return []
-
-    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL)
-    def volatility_data(self, category: str = 'linear', limit: int = 10) -> list:
+    @logged_cache(expire=ttl_for('volatility_data'))
+    async def volatility_data(self, category: str = 'linear', limit: int = 10) -> list:
         params = {'category': category}
 
-        raw = self.__request(
+        raw = await self.__request(
             url=self.tickers_url,
             params=params
         )
@@ -94,8 +93,8 @@ class BybitAPI:
         )[:limit]
 
 
-    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL)
-    def candlestick_data(self, symbol: str, interval: str = '60', limit: int = 48) -> list:
+    @logged_cache(expire=ttl_for('candlestick_data'))
+    async def candlestick_data(self, symbol: str, interval: str = '60', limit: int = 48) -> list:
         params = {
             'category': 'linear',
             'symbol': symbol,
@@ -103,13 +102,13 @@ class BybitAPI:
             'limit': limit
         }
 
-        return self.__request(
+        return await self.__request(
             url=self.candles_url,
             params=params
         )
 
-
-    def volume_clusters(
+    @logged_cache(expire=ttl_for('volume_clusters'))
+    async def volume_clusters(
         self, symbol: str, bin_size: int = settings.BIN_SIZE,
         trade_limit: int = settings.TRADES_LIMIT, limit: int = 10) -> list:
 
@@ -122,7 +121,7 @@ class BybitAPI:
                 'limit': trade_limit
             }
 
-            trades = self.__request(
+            trades = await self.__request(
                 url=self.trades_url,
                 params=params
             )
@@ -158,7 +157,8 @@ class BybitAPI:
         return []
 
 
-    def sma_trend(
+    @logged_cache(expire=ttl_for('sma_trend'))
+    async def sma_trend(
         self, symbol: str, interval: str = settings.SMA_INTERVAL,
         period: int = settings.SMA_PERIOD, category: str = 'linear') -> dict:
 
@@ -169,7 +169,7 @@ class BybitAPI:
             'limit': period
         }
 
-        data = self.__request(
+        data = await self.__request(
             url=self.candles_url,
             params=params
         )
@@ -190,7 +190,8 @@ class BybitAPI:
         }
 
 
-    def ad_trend(
+    @logged_cache(expire=ttl_for('ad_trend'))
+    async def ad_trend(
         self, symbol: str, interval: str = settings.AD_INTERVAL, 
         limit: int = settings.AD_LIMIT, category: str = 'linear', hours: int = 48) -> dict:
 
@@ -204,7 +205,7 @@ class BybitAPI:
             'limit': limit
         }
 
-        data = self.__request( 
+        data = await self.__request( 
             url=settings.BYBIT_CANDLESTCIKS_URL,
             params=params
         )
@@ -234,11 +235,12 @@ class BybitAPI:
         }
 
 
-    def fibonacci_levels(
+    @logged_cache(expire=ttl_for('fibonacci_levels'))
+    async def fibonacci_levels(
         self, symbol: str, interval: str = settings.INTERVAL, 
         limit: int = settings.LIMIT) -> dict:
 
-        candles = self.candlestick_data(
+        candles = await self.candlestick_data(
             symbol=symbol,
             interval=interval,
             limit=limit
@@ -261,7 +263,8 @@ class BybitAPI:
         }
 
 
-    def support_resistance_levels(
+    @logged_cache(expire=ttl_for('support_resistance_levels'))
+    async def support_resistance_levels(
         self, symbol: str, interval: str = settings.INTERVAL,
         limit: int = settings.LIMIT, category: str = 'linear', hours: int = 48) -> dict:
 
@@ -272,7 +275,7 @@ class BybitAPI:
             'limit': limit
         }
 
-        data = self.__request( 
+        data = await self.__request( 
             url=settings.BYBIT_CANDLESTCIKS_URL,
             params=params
         )
@@ -291,12 +294,12 @@ class BybitAPI:
         }
 
 
-    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL or ttl_for('rsi'))
-    def rsi(
+    @logged_cache(expire=ttl_for('rsi'))
+    async def rsi(
         self, symbol: str, interval: str = settings.INTERVAL,
         limit: int = settings.LIMIT, period: int = 14, hours: int = 48) -> dict:
 
-        data = self.candlestick_data(
+        data = await self.candlestick_data(
             symbol=symbol,
             interval=interval,
             limit=limit
@@ -323,12 +326,12 @@ class BybitAPI:
         return data[['open_time', 'rsi']].to_dict(orient='records')
 
 
-    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL or ttl_for('macd'))
-    def macd(
+    @logged_cache(expire=ttl_for('macd'))
+    async def macd(
         self, symbol: str, interval: str = settings.INTERVAL,
         limit: int = settings.LIMIT, hours: int = 48) -> dict:
 
-        data = self.candlestick_data(
+        data = await self.candlestick_data(
             symbol=symbol,
             interval=interval,
             limit=limit
@@ -356,12 +359,12 @@ class BybitAPI:
         return data[['open_time', 'macd', 'signal', 'histogram']].to_dict(orient='records')
 
 
-    @cache.memoize(expire=settings.CACHE_DEFAULT_TTL or ttl_for('bollinger'))
-    def bollinger(
+    @logged_cache(expire=ttl_for('bollinger'))
+    async def bollinger(
         self, symbol: str, interval: str = settings.INTERVAL,
         limit: int = settings.LIMIT, window: int = 20, hours: int = 48) -> dict:
 
-        data = self.candlestick_data(
+        data = await self.candlestick_data(
             symbol=symbol,
             interval=interval,
             limit=limit

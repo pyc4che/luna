@@ -18,7 +18,7 @@ async def get_top_volatile_pairs(category: str = Query('linear'), limit: int = Q
     )
 
     return {
-        'result': api.volatility_data(
+        'result': await api.volatility_data(
             category=category,
             limit=limit
         )
@@ -31,7 +31,7 @@ async def get_candles(symbol: str = Query(...), interval: str = Query('60'), hou
         f'Request: candlesticks (symbol={symbol}, interval={interval}, hours={hours})'
     )
 
-    raw = api.candlestick_data(
+    raw = await api.candlestick_data(
         symbol=symbol,
         interval=interval,
         limit=int(hours * 60 / int(interval))
@@ -55,7 +55,7 @@ async def get_clusters(symbol: str = Query(...), bin_size: int = Query(50), trad
     )
 
     return {
-        'result': api.volume_clusters(
+        'result': await api.volume_clusters(
             symbol=symbol,
             bin_size=bin_size,
             trade_limit=trade_limit,
@@ -71,7 +71,7 @@ async def get_sma(symbol: str = Query(...), interval: str = Query('1'), period: 
     )
 
     return {
-        'result': api.sma_trend(
+        'result': await api.sma_trend(
             symbol=symbol,
             interval=interval,
             period=period,
@@ -87,7 +87,7 @@ async def get_ad_line(symbol: str = Query(...), interval: str = Query('15'), lim
     )
 
     return {
-        'result': api.ad_trend(
+        'result': await api.ad_trend(
             symbol=symbol,
             interval=interval,
             limit=limit,
@@ -103,7 +103,7 @@ async def get_fibonacci_levels(symbol: str = Query(...), interval: str = Query('
     )
 
     return {
-        'result': api.fibonacci_levels(
+        'result': await api.fibonacci_levels(
             symbol=symbol,
             interval=interval,
             limit=limit,
@@ -119,7 +119,7 @@ async def get_support_resistance_levels(symbol: str = Query(...), interval: str 
     )
 
     return {
-        'result': api.support_resistance_levels(
+        'result': await api.support_resistance_levels(
             symbol=symbol,
             interval=interval,
             limit=limit,
@@ -136,7 +136,7 @@ async def get_rsi(symbol: str = Query(...), interval: str = Query('60'), limit: 
     )
 
     return {
-        'result': api.rsi(
+        'result': await api.rsi(
             symbol=symbol,
             interval=interval,
             limit=limit,
@@ -153,7 +153,7 @@ async def get_macd(symbol: str = Query(...), interval: str = Query('60'), limit:
     )
 
     return {
-        'result': api.macd(
+        'result': await api.macd(
             symbol=symbol,
             interval=interval,
             limit=limit,
@@ -169,7 +169,7 @@ async def get_bollinger(symbol: str = Query(...), interval: str = Query('60'), l
     )
 
     return {
-        'result': api.bollinger(
+        'result': await api.bollinger(
             symbol=symbol,
             interval=interval,
             limit=limit,

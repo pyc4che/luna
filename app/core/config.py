@@ -49,22 +49,40 @@ class Settings(BaseModel):
     LOG_DIR: Path = Field(default=Path('logs'))
     LOG_FILE: Path = Field(default=Path('logs/service.log'))
 
-    CACHE_RSI_TTL: int = Field(
-        default=90
+    TTL_DEFAULT: int = Field(
+        default=300
     )
-    CACHE_MACD_TTL: int = Field(
+    
+    TTL_RSL: int = Field(
         default=120
     )
-    CACHE_DEFAULT_TTL: int = Field(
-        default=60
+    TTL_MACD: int = Field(
+        default=120
     )
-    CACHE_BOLLINGER_TTL: int = Field(
+    TTL_AD_TREND: int = Field(
+        default=300
+    )
+    TTL_SMA_TREND: int = Field(
+        default=300
+    )
+    TTL_BOLLINGER: int = Field(
         default=180
     )
-
-    def get_ttl(self, key: str, default: int = None) -> int:
-        return getattr(self, key, default or self.CACHE_DEFAULT_TTL)
-
+    TTL_CANDLESTICK_DATA: int = Field(
+        default=10
+    )
+    TTL_VOLUME_CLUSTERS: int = Field(
+        default=300
+    )
+    TTL_VOLATILITY_DATA: int = Field(
+        default=300
+    )
+    TTL_FIBONACCI_LEVELS: int = Field(
+        default=300
+    )
+    TTL_SUPPORT_RESISTANCE_LEVELS: int = Field(
+        default=300
+    )
 
     class Config:
         case_sensitive = False
